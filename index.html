@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Texas Hold'em</title>
+
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/pokersolver@2.1.4/pokersolver.min.js"></script>
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+</head>
+<body>
+
+<div id="name-modal" class="modal hidden">
+  <div class="modal-content">
+    <h3 id="name-modal-title">名前を入力してください</h3>
+    <input id="name-input" type="text" placeholder="Player" maxlength="12">
+    <button id="name-ok">決定</button>
+  </div>
+</div>
+
+<div id="lobby" class="panel">
+  <h2>Texas Hold'em Lobby</h2>
+
+  <div class="room-info">
+    <div>Room ID: <span id="room-id">---</span></div>
+    <button id="copy-url">招待URLをコピー</button>
+  </div>
+
+  <h3>Players</h3>
+  <ul id="player-list"></ul>
+
+  <button id="add-cpu" class="hidden wide_button">＋ CPUを追加</button>
+  <button id="start-game" class="hidden wide_button">ゲーム開始</button>
+</div>
+
+<div id="table" class="hidden">
+
+  <div id="board-area">
+    <div id="board"></div>
+    <div id="deck"></div>
+    <div id="pot">Pot: 0</div>
+    <div id="phase">Phase: preflop</div>
+    <!-- <div id="result"></div> -->
+  </div>
+
+  <div id="players-wrapper">
+    <div id="players"></div>
+  </div>
+
+  <div id="controls">
+    <button data-act="call" class="action-btn">Call</button>
+    <button data-act="raise" class="action-btn">Raise</button>
+    <button data-act="fold" class="action-btn">Fold</button>
+    <button id="next-hand">NextHand</button>
+  </div>
+
+</div>
+
+<script src="js/net.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/lobby.js"></script>
+<script src="js/game.js"></script>
+<script src="js/cpu.js"></script>
+</body>
+</html>

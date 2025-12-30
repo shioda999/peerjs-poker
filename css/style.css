@@ -1,0 +1,289 @@
+body {
+  background: radial-gradient(#064420, #021d0f);
+  font-family: system-ui, monospace;
+  color: #eee;
+  overflow: hidden; /* ← スクロール禁止 */
+  height: 100vh;
+}
+
+.panel {
+  width: 360px;
+  margin: 20px auto;
+  padding: 16px;
+  border-radius: 8px;
+  background: #222;
+  color: #fff;
+}
+
+.hidden {
+  display: none;
+}
+
+#player-list {
+  list-style: none;
+  padding: 0;
+}
+
+#player-list li {
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  background: #333;
+  border-radius: 4px;
+}
+
+.lobby-btn {
+  padding: 6px 6px;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.lobby-btn:first-of-type {
+  margin-left: auto;
+}
+
+.lobby-btn:hover {
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+.is-me {
+  color: #ffd700;
+  font-weight: bold;
+}
+
+.room-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#controls {
+  position: sticky;
+  bottom: 0;
+  background: #111;
+  padding: 10px;
+  border-top: 1px solid #333;
+  text-align: center;
+  z-index: 10;
+}
+
+button {
+  padding: 8px 14px;
+  margin: 0 4px;
+  background: #222;
+  color: #eee;
+  border: 1px solid #555;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.wide_button {
+  margin-top: 8px;
+  width: 100%;
+  padding: 6px;
+}
+
+button:hover {
+  background: #333;
+}
+
+#start-game {
+  background: #228;
+}
+
+#start-game:hover {
+  background: #888;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: #222;
+  color: white;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.modal-content input {
+  width: 200px;
+  padding: 6px;
+  margin: 10px 0;
+}
+
+#table {
+  max-width: 900px;
+  margin: 20px auto;
+}
+
+/* #board-area {
+  height: 140px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 16px;
+} */
+
+#board-area {
+  display: grid;
+  /* 中央列を基準にする */
+  grid-template-columns: 180px auto 180px;
+  grid-template-rows: auto auto auto;
+  column-gap: 16px;
+  position: relative;
+  margin-bottom: 16px;
+}
+
+#board {
+  display: flex;
+  gap: 8px;
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: center;
+}
+
+#deck {
+  grid-column: 3;
+  grid-row: 1;
+  width: 60px;
+  height: 84px;
+  background-image: url("../img/cards_back.png");
+  background-size: 60px 84px;
+  pointer-events: none;
+}
+
+#pot {
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: center;
+}
+
+#phase {
+  grid-column: 2;
+  grid-row: 3;
+  justify-self: center;
+}
+
+#players-wrapper {
+  overflow-y: auto;
+  margin-bottom: 16px;
+}
+
+.player .name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.card {
+  width: 60px;
+  height: 84px;
+  background-image: url('../img/cards.png'); /* スプライト画像 */
+  background-size: 780px 336px; /* 13x4カードの場合 */
+  position: relative; /* 配置先を基準にする */
+  border-radius: 4px;
+  transition: all 0.5s ease; /* アニメーション */
+}
+
+.player .hand {
+  position: relative; /* 配置先を基準にする */
+  height: 84px;
+  margin-top: 5px;
+}
+
+.card.back {
+  background-image: url("../img/cards_back.png");
+  background-size: 60px 84px;
+}
+
+#players {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.player {
+  background: #111;
+  border: 2px solid #333;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.player.me {
+  border-color: #0f0;
+}
+
+.player.folded {
+  opacity: 0.4;
+}
+
+.player .name {
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #444;
+  border-radius: 6px;
+  padding: 0 6px;          /* 上下パディングを0に */
+  font-size: 12px;
+  margin-left: 6px;
+  height: 18px !important;
+  min-height: 18px;
+  max-height: 18px;
+  flex-shrink: 0;          /* Flex親要素によって潰されるのを防ぐ */
+  line-height: 1;          /* inline-flex の場合は 1 でOK */
+}
+
+
+.badge.turn {
+  background: #0f0;
+  color: #000;
+}
+
+.badge.hand {
+  background: #ff0;
+  color: #000;
+}
+
+.hand {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+#next-hand {
+  min-width: 180px;
+}
+
+.bet-diff {
+  margin-left: 4px;
+  font-size: 0.9em;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.bet-diff-active {
+  opacity: 1;
+  color: #ffca28;      /* 黄色 */
+  font-weight: bold;
+}
