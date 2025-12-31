@@ -1,0 +1,87 @@
+/* =========================
+   Mobile UI mode
+   enabled by body.mobile
+========================= */
+
+body.mobile {
+  overflow: hidden;
+}
+
+/* -------- Table layout -------- */
+
+body.mobile #table {
+  display: grid;
+  grid-template-rows:
+    auto
+    1fr
+    auto
+    auto;
+  height: 100dvh;
+  width: 100%;
+  margin: 0;
+}
+
+/* -------- Other players -------- */
+
+body.mobile #players-wrapper {
+  overflow: hidden;
+  padding: 6px 4px;
+}
+
+body.mobile #players {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  justify-items: center;
+}
+
+body.mobile .player {
+  --card-scale: 0.6;
+  padding: 6px;
+  font-size: 12px;
+}
+
+body.mobile .player:not(.me) .hand {
+  display: none;
+}
+
+/* -------- Board -------- */
+
+body.mobile #board-area {
+  align-self: center;
+  justify-self: center;
+}
+
+body.mobile #board {
+  gap: 6px;
+}
+
+/* -------- Me -------- */
+
+body.mobile #me-wrapper {
+  position: sticky;
+  bottom: 64px;
+  z-index: 5;
+  background: radial-gradient(#064420, #021d0f);
+}
+
+body.mobile .player.me {
+  --card-scale: 1.1;
+}
+
+/* -------- Controls -------- */
+
+body.mobile #controls {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  padding: 10px 4px;
+}
+
+body.mobile .action-btn {
+  min-width: 80px;
+  font-size: 16px;
+}
+
+body.mobile #next-hand {
+  min-width: 160px;
+}

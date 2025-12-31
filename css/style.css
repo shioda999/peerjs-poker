@@ -1,9 +1,18 @@
+ /* style.css */
+
+:root {
+  --card-scale: 1.0;
+  --card-w: 69px;
+  --card-h: 101px;
+}
+
 body {
   background: radial-gradient(#064420, #021d0f);
   font-family: system-ui, monospace;
   color: #eee;
   overflow: hidden; /* ← スクロール禁止 */
   height: 100vh;
+  font-size: var(--font-base);
 }
 
 .panel {
@@ -17,6 +26,8 @@ body {
 
 .hidden {
   display: none;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 #player-list {
@@ -126,33 +137,35 @@ button:hover {
   margin: 10px 0;
 }
 
+#table-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
 #table {
-  max-width: 900px;
+  display: inline-block;
+  max-width: min(1200px, 100vw - 40px);
   margin: 20px auto;
 }
 
-/* #board-area {
-  height: 140px;
+#board-area {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  margin-bottom: 16px;
-} */
+}
 
-#board-area {
+#board-row {
   display: grid;
-  /* 中央列を基準にする */
-  grid-template-columns: 180px auto 180px;
+  grid-template-columns: calc(var(--card-w) * 0.) auto var(--card-w);
   grid-template-rows: auto auto auto;
-  column-gap: 16px;
+  column-gap: 32px;
   position: relative;
-  margin-bottom: 16px;
+  margin: 0px 16px 16px 16px;
 }
 
 #board {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   grid-column: 2;
   grid-row: 1;
   justify-self: center;
@@ -161,28 +174,17 @@ button:hover {
 #deck {
   grid-column: 3;
   grid-row: 1;
-  width: 60px;
-  height: 84px;
-  background-image: url("../img/cards_back.png");
-  background-size: 60px 84px;
   pointer-events: none;
 }
 
 #pot {
-  grid-column: 2;
-  grid-row: 2;
   justify-self: center;
+  font-size: 20px;
 }
 
 #phase {
-  grid-column: 2;
-  grid-row: 3;
   justify-self: center;
-}
-
-#players-wrapper {
-  overflow-y: auto;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
 }
 
 .player .name {
@@ -192,57 +194,104 @@ button:hover {
 }
 
 .card {
-  width: 60px;
-  height: 84px;
-  background-image: url('../img/cards.png'); /* スプライト画像 */
-  background-size: 780px 336px; /* 13x4カードの場合 */
-  position: relative; /* 配置先を基準にする */
+  width: calc(var(--card-w) * var(--card-scale));
+  height: calc(var(--card-h) * var(--card-scale));
+  background-size:
+    calc(var(--card-w) * 13 * var(--card-scale))
+    calc(var(--card-h) * 4 * var(--card-scale));
+  background-image: url('../img/cards.png');
+  position: relative;
   border-radius: 4px;
-  transition: all 0.5s ease; /* アニメーション */
+  transition:
+    transform 0.5s ease,
+    box-shadow 0.3s ease,
+    opacity 0.3s ease;
 }
 
-.player .hand {
-  position: relative; /* 配置先を基準にする */
-  height: 84px;
-  margin-top: 5px;
+/* #board .card {
+  margin-right: calc(var(--card-w) * var(--card-scale) * -0.3);
 }
+
+#players .card {
+  margin-right: calc(var(--card-w) * var(--card-scale) * -0.4);
+} */
 
 .card.back {
+  background-size:
+    calc(var(--card-w) * var(--card-scale))
+    calc(var(--card-h) * var(--card-scale));
   background-image: url("../img/cards_back.png");
-  background-size: 60px 84px;
+}
+
+.player {
+  --card-scale: 0.8;
+}
+
+.player.me {
+  --card-scale: 1.2;
+}
+
+#players-wrapper {
+  overflow-y: auto;
+  margin-bottom: 16px;
 }
 
 #players {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  display: flex;
   gap: 12px;
+  width: 100%;
 }
+
+/* #players {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+} */
 
 .player {
   background: #111;
   border: 2px solid #333;
   border-radius: 10px;
   padding: 10px;
+  min-width: 120px;   /* 最低限 */
+  flex: 1 1 0;        /* ← ここが肝 */
 }
 
-.player.me {
+/* .player.me {
   border-color: #0f0;
+} */
+
+.player.turn{
+  border-color: #0f0;
+}
+
+.player .name {
+  font-weight: bold;
+}
+
+.player .hand {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
 }
 
 .player.folded {
   opacity: 0.4;
 }
 
-.player .name {
-  font-weight: bold;
-  margin-bottom: 4px;
+.player .stack-bet {
+  display: flex;
+  flex-direction: column;
+  align-items: center;   /* ← 中央寄せ */
+  text-align: center;    /* ← 文字も中央 */
 }
 
 .badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #444;
+  background: #ff0;
+  color: #000;
   border-radius: 6px;
   padding: 0 6px;          /* 上下パディングを0に */
   font-size: 12px;
@@ -257,18 +306,23 @@ button:hover {
 
 .badge.turn {
   background: #0f0;
-  color: #000;
-}
-
-.badge.hand {
-  background: #ff0;
-  color: #000;
 }
 
 .hand {
   display: flex;
-  gap: 6px;
   margin-top: 6px;
+}
+
+.last-action {
+  position: absolute;
+  padding: 4px 10px;
+  font-size: 16px;
+  font-weight: bold;
+  color: white;
+  background: rgba(0,0,0,0.55);
+  border-radius: 6px;
+  pointer-events: none;
+  white-space: nowrap;
 }
 
 #next-hand {

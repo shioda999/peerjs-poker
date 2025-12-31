@@ -105,13 +105,17 @@ function initHand() {
     waiting_players: [],
     raiseAmount: game.raiseAmount,
     raiseCount: 0,
+    board_animating: [...Array(5)].map(() => true),
   };
+
+  game.board = [...Array(5)].map(() => deck.pop());
 
   game.players.forEach(p => {
     p.hand = [];
     p.hand_animating = [true, true];
     p.bet = 0;
     p.acted = false;
+    p.last_action = "";
     p.folded = false;
     p.handResult = null;
   });
@@ -172,6 +176,7 @@ window.pushActButton = pushActButton;
 function fold(p) {
   p.folded = true;
   p.acted = true;
+  p.last_action = "fold";
 }
 
 function call(p) {
@@ -182,6 +187,7 @@ function call(p) {
     game.pot += need;
   }
   p.acted = true;
+  p.last_action = "call";
 }
 
 function raise(p, amt) {
@@ -196,8 +202,13 @@ function raise(p, amt) {
   p.acted = true;
 
   game.players.forEach(o => {
-    if (o !== p && !o.folded) o.acted = false;
+    if (o !== p && !o.folded) {
+      o.acted = false;
+      o.last_action = "";
+    }
   });
+
+  p.last_action = "raise";
 }
 
 /* =====================
@@ -211,8 +222,8 @@ function nextTurn() {
 
   // 1. 現在のフェーズが終了したかチェック
   if (bettingDone()) {
-    // nextPhase();
-    broadcastState("NEXT_PHASE");
+    updateUI();
+    setTimeout(() => broadcastState("NEXT_PHASE"), 800);
     return;
   }
 
@@ -258,12 +269,10 @@ function bettingDone() {
 function nextPhase() {
   game.players.forEach(p => {
     p.acted = false;
+    p.last_action = "";
   });
 
   if (game.phase === "preflop") {
-    cards = [game.deck.pop(), game.deck.pop(), game.deck.pop(), game.deck.pop(), game.deck.pop()];
-    game.board.push(...cards);
-    game.board_animating = [true, true, true, true, true];
     animateDealBoard([0,1,2]);
     game.phase = "flop";
   } else if (game.phase === "flop") {

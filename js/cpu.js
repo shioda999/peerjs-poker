@@ -14,7 +14,8 @@ function decideCpuAction(p) {
   }
 }
 
-async function cpuMove(p, time=750) {
+async function cpuMove(p, time=null) {
+  if (!time) time = Math.min(600, 2000 / game.players.length)
   // 実行条件チェック
   if (
     game.phase === "showdown" ||
@@ -176,7 +177,7 @@ function fisher_yates_shuffle(array) {
 function estimateWinRate(myHand, board, trials = 1000) {
   let wins = 0;
   let ties = 0;
-  let remaining_deck = getRemainingDeck(myHand);
+  let remaining_deck = getRemainingDeck(myHand, game.board);
 
   for (let i = 0; i < trials; i++) {
     const deck = fisher_yates_shuffle([...remaining_deck]);
@@ -213,10 +214,10 @@ function potOddsOk(p, winRate) {
   return winRate > cost / (game.pot + cost);
 }
 
-function getRemainingDeck(myHand) {
+function getRemainingDeck(myHand, board) {
   const used = [
-    ...game.board,
-    ...myHand
+    ...myHand,
+    ...board
   ];
   return makeDeck().filter(c => !used.includes(c));
 }

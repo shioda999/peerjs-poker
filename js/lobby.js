@@ -86,7 +86,7 @@ function updateLobby(players) {
       li.textContent += " [You]";
       li.classList.add("is-me");
     }
-    if (!p.isHuman) li.textContent += " 🤖";
+    // if (!p.isHuman) li.textContent += " 🤖";
     if (isHost && !p.isHuman || p.id === player_id) {
       
       if (!p.isHuman) {
@@ -149,7 +149,7 @@ function addCPUPlayer() {
 
   cpuCount++;
   const cpu = {
-    name: `CPU${cpuCount}`,
+    name: `CPU${cpuCount} 🤖`,
     isHuman: false,
     isHost: false,
     stack: 1000,
