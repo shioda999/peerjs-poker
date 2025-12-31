@@ -41,8 +41,17 @@ function renderPlayers() {
     const d = document.createElement("div");
     d.className = "player" + (isMe ? " me" : "") + (p.folded ? " folded" : "");
 
-    if (isTurn) d.classList.add("turn");
+    if (isTurn && game.phase !== "showdown") d.classList.add("turn");
     else d.classList.remove("turn");
+
+    if (p.win) {
+      if (!d.classList.contains("winner")) {
+        if(isMe) playSE("win");
+        // else playSE("lose");
+      }
+      d.classList.add("winner");
+    }
+    else d.classList.remove("winner");
 
     // name
     const nameRow = document.createElement("div");
@@ -151,10 +160,13 @@ function renderInfo() {
 
 function updateControlsVisibility() {
   const isShowdown = (game.phase === "showdown");
+  const isMyTurn = (is_me(game.players[game.turn]));
 
   // Call / Raise / Fold
   document.querySelectorAll("#controls [data-act]").forEach(btn => {
     btn.style.display = isShowdown ? "none" : "";
+    if (isMyTurn) btn.classList.remove("inactive");
+    else btn.classList.add("inactive");
   });
 
   // NextHand
@@ -269,6 +281,8 @@ function animateDealBoard(cards_index, callback) {
   const boardDiv = document.getElementById("board");
   const [deckX, deckY] = get_deck_pos();
 
+  playSE("deal");
+
   cards_index.forEach(i => {
     const animCard = cardDiv("??");
     animCard.style.position = "fixed";
@@ -323,6 +337,8 @@ function animateDealingHands(callback) {
 
   function dealNext(i) {
     if (i >= cardsToDeal.length) return;
+    
+    playSE("deal");
 
     const { playerIndex, cardIndex, div_index } = cardsToDeal[i];
     const player = game.players[playerIndex];

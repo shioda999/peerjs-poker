@@ -80,6 +80,7 @@ function startGame() {
   // カード配布アニメーション
   animateDealingHands(() => {
     waitPlayer();
+    playBGM();
   });
 }
 
@@ -118,6 +119,7 @@ function initHand() {
     p.last_action = "";
     p.folded = false;
     p.handResult = null;
+    p.win = false;
   });
 
   // hole cards
@@ -223,7 +225,7 @@ function nextTurn() {
   // 1. 現在のフェーズが終了したかチェック
   if (bettingDone()) {
     updateUI();
-    setTimeout(() => broadcastState("NEXT_PHASE"), 800);
+    setTimeout(() => broadcastState("NEXT_PHASE"), 500);
     return;
   }
 
@@ -305,6 +307,7 @@ function isAliveSingle() {
 function singleWinner() {
   const alive = game.players.filter(p => !p.folded);
   const winner = alive[0];
+  winner.win = true;
   winner.stack += game.pot;
 
   game.players.forEach(p => p.handResult = null);
@@ -337,6 +340,7 @@ function showdown() {
     s.player.handResult = s.hand.descr;
     if (winners.includes(s.hand)) {
       s.player.stack += winAmount;
+      s.player.win = true;
       names.push(s.player.name);
     }
   });

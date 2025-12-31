@@ -15,7 +15,7 @@ function decideCpuAction(p) {
 }
 
 async function cpuMove(p, time=null) {
-  if (!time) time = Math.min(600, 2000 / game.players.length)
+  if (!time) time = Math.min(500, 2000 / game.players.length)
   // 実行条件チェック
   if (
     game.phase === "showdown" ||

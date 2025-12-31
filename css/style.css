@@ -101,6 +101,11 @@ button:hover {
   background: #333;
 }
 
+.inactive {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 #start-game {
   background: #228;
 }
@@ -255,6 +260,10 @@ button:hover {
   padding: 10px;
   min-width: 120px;   /* 最低限 */
   flex: 1 1 0;        /* ← ここが肝 */
+}
+
+.player.winner{
+  border-color: rgb(255, 255, 0);
 }
 
 /* .player.me {
