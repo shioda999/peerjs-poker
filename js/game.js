@@ -5,6 +5,10 @@
 ===================== */
 const SUITS = ["s", "h", "d", "c"];
 const RANKS = ["2","3","4","5","6","7","8","9","T","J","Q","K","A"];
+const RAISEAMOUNT = 20;
+const INITSTACK = 150;
+
+let game = {"players": [], "waiting_players": [], "raiseAmount": RAISEAMOUNT, "initStack": INITSTACK};
 
 function makeDeck() {
   return SUITS.flatMap(s => RANKS.map(r => r + s));
@@ -17,22 +21,7 @@ function shuffle(deck) {
   }
 }
 
-/* =====================
-   MATCH STATE (永続)
-===================== */
-// const players = [
-//   { name: "You",  isHuman: true, is_me: true,  stack: 1000 },
-//   { name: "CPU1", isHuman: false, is_me: false, stack: 1000 },
-//   { name: "CPU2", isHuman: false, is_me: false, stack: 1000 },
-//   { name: "Human", isHuman: true, is_me: false, stack: 1000 }
-// ];
-
 let buttonIndex = 0; // BTN（Dealer）
-
-/* =====================
-   HAND STATE
-===================== */
-let game = {"players": [], "waiting_players": [], "raiseAmount": 20};
 
 /* =====================
    Position Helpers
@@ -67,13 +56,17 @@ function dealGameProc(event) { // client
       nextPhase();
       break;
     case "SINGLE":
-      singleWinner();
+      showdown();
+      break;
+    case "RESULT":
+      showResult();
       break;
   }
   updateUI();
 }
 
 function startGame() {
+  closeResultModal(false);
   // 配布後にプリフロップ初手番
   game.turn = getFirstTurnOfPhase("preflop");
   normalizeTurn();
@@ -82,6 +75,11 @@ function startGame() {
     waitPlayer();
     playBGM();
   });
+}
+
+function initStack() {
+  game.players.forEach(p => { p.stack = game.initStack });
+  console.log(game.players)
 }
 
 /* =====================
@@ -105,6 +103,7 @@ function initHand() {
     players: game.players,
     waiting_players: [],
     raiseAmount: game.raiseAmount,
+    initStack: game.initStack,
     raiseCount: 0,
     board_animating: [...Array(5)].map(() => true),
   };
@@ -117,7 +116,7 @@ function initHand() {
     p.bet = 0;
     p.acted = false;
     p.last_action = "";
-    p.folded = false;
+    p.folded = p.stack === 0 ? true : false;
     p.handResult = null;
     p.win = false;
   });
@@ -144,6 +143,7 @@ function waitPlayer() {
 }
 
 function postBlind(p, amt) {
+  amt = Math.min(p.stack, amt);
   p.stack -= amt;
   p.bet += amt;
   game.pot += amt;
@@ -155,13 +155,13 @@ function is_me(player) {
 /* =====================
    Player Actions
 ===================== */
-function act(type, playerId=player_id) {
+function act(type, playerId=player_id, raiseAmount=0) {
   const p = game.players[game.turn];
   if (p.id !== playerId || game.phase === "showdown" || !isHost) return;
   
   if (type === "fold") fold(p);
   if (type === "call") call(p);
-  if (type === "raise") raise(p, game.raiseAmount);
+  if (type === "raise") raise(p, raiseAmount);
 
   nextTurn();
 }
@@ -169,8 +169,22 @@ function act(type, playerId=player_id) {
 function pushActButton(type) {
   const p = game.players[game.turn];
   if (!is_me(p) || game.phase === "showdown") return;
-  if (!isHost) send({ type: "ACT", action: type, playerId: player_id});
-  else act(type);
+  if (type == "raise") {
+    me = game.players.filter(p => is_me(p))[0]
+    openRaiseModal({
+      min: game.raiseAmount + game.currentBet - p.bet,
+      max: me.stack,
+      value: game.raiseAmount + game.currentBet - p.bet
+    });
+  }
+  else doAct(type);
+}
+
+function doAct(type, raiseAmount=0) {
+  const p = game.players[game.turn];
+  const diff = game.currentBet - p.bet;
+  if (!isHost) send({ type: "ACT", action: type, playerId: player_id, raiseAmount: raiseAmount - diff});
+  else act(type, player_id, raiseAmount - diff);
 }
 
 window.pushActButton = pushActButton;
@@ -182,7 +196,7 @@ function fold(p) {
 }
 
 function call(p) {
-  const need = game.currentBet - p.bet;
+  const need = Math.min(game.currentBet - p.bet, p.stack);
   if (need > 0) {
     p.stack -= need;
     p.bet += need;
@@ -194,7 +208,12 @@ function call(p) {
 
 function raise(p, amt) {
   const newBet = game.currentBet + amt;
-  const need = newBet - p.bet;
+  const need = Math.min(newBet - p.bet, p.stack);
+
+  if (p.stack < need) {
+    call(p);
+    return;
+  }
 
   p.stack -= need;
   p.bet += need;
@@ -211,6 +230,7 @@ function raise(p, amt) {
   });
 
   p.last_action = "raise";
+  playSE("up");
 }
 
 /* =====================
@@ -239,17 +259,13 @@ function nextTurn() {
 }
 
 function advanceTurn() {
-  let safety = 0;
-  do {
-    game.turn = (game.turn + 1) % game.players.length;
-    safety++;
-    if (safety > game.players.length) break;
-  } while (game.players[game.turn].folded); // Foldしている間は飛ばし続ける
+  game.turn = (game.turn + 1) % game.players.length;
+  normalizeTurn();
 }
 
 function normalizeTurn() {
   let safety = 0;
-  while (game.players[game.turn].folded) {
+  while (game.players[game.turn].folded || game.players[game.turn].stack == 0) {
     game.turn = (game.turn + 1) % game.players.length;
     safety++;
     if (safety > game.players.length) break;
@@ -260,8 +276,7 @@ function bettingDone() {
   // まだゲームに残っている（Foldしていない）プレイヤーを抽出
   const alive = game.players.filter(p => !p.folded);
   flag = alive.every(p => 
-    p.acted === true &&               // 1. 少なくとも1回は手番を終えている
-    p.bet === game.currentBet    // 2. 出しているチップ額が現在のベット額と一致している
+    p.acted === true && p.bet === game.currentBet || p.stack === 0
   );
 
   // 以下の条件を「すべて」満たしているかチェック
@@ -284,16 +299,17 @@ function nextPhase() {
     animateDealBoard([4]);
     game.phase = "river";
   } else {
-    game.phase = "showdown";
     showdown();
     return;
   }
 
   game.turn = getFirstTurnOfPhase(game.phase);
+
   normalizeTurn();
   updateUI();
 
-  waitPlayer();
+  if (bettingDone()) broadcastState("NEXT_PHASE");
+  else waitPlayer();
 }
 
 /* =====================
@@ -304,24 +320,27 @@ function isAliveSingle() {
   return alive.length === 1
 }
 
-function singleWinner() {
-  const alive = game.players.filter(p => !p.folded);
-  const winner = alive[0];
-  winner.win = true;
-  winner.stack += game.pot;
-
-  game.players.forEach(p => p.handResult = null);
-  winner.handResult = "Uncontested";
-
-  game.phase = "showdown";
-  game.result = `Winner: ${winner.name}`;
-  updateUI();
-}
-
 /* =====================
    Showdown
 ===================== */
 function showdown() {
+  let names = [];
+
+  settleHand();
+
+  game.players.forEach(p => {
+    if (p.win) names.push(p.name)
+  })
+  game.result = `Winner: ${names.join(", ")}`;
+  game.phase = "showdown";
+  updateUI();
+
+  const player = game.players.filter(p => is_me(p))[0];
+  if (player.win) playSE("win");
+  if (player.stack === 0) setTimeout(() => nextHand(), 1000);
+}
+
+function settleHand() {
   const alive = game.players.filter(p => !p.folded);
 
   const solved = alive.map(p => ({
@@ -329,25 +348,59 @@ function showdown() {
     hand: Hand.solve(p.hand.concat(game.board))
   }));
 
-  const winners = Hand.winners(solved.map(s => s.hand));
-  const winAmount = game.pot / winners.length;
-
   game.players.forEach(p => p.handResult = null);
 
-  const names = [];
-
-  solved.forEach(s => {
-    s.player.handResult = s.hand.descr;
-    if (winners.includes(s.hand)) {
-      s.player.stack += winAmount;
-      s.player.win = true;
-      names.push(s.player.name);
-    }
+  // 勝利フラグ初期化
+  alive.forEach(p => {
+    p.win = false;
+    p.handResult = "";
   });
 
-  game.result = `Winner: ${names.join(", ")}`;
-  game.phase = "showdown";
-  updateUI();
+  // bet昇順（bet > 0 のみ）
+  const sorted = [...alive]
+    .filter(p => p.bet > 0)
+    .sort((a, b) => a.bet - b.bet);
+
+  let remaining = [...sorted];
+  let prevBet = 0;
+  const pots = [];
+
+  // ポット構築
+  for (const p of sorted) {
+    const diff = p.bet - prevBet;
+    if (diff <= 0) continue;
+
+    pots.push({
+      amount: diff * remaining.length,
+      players: [...remaining]
+    });
+
+    prevBet = p.bet;
+    remaining = remaining.filter(r => r !== p);
+  }
+
+  // ポットごとに分配
+  for (const pot of pots) {
+    const potSolved = solved.filter(s =>
+      pot.players.includes(s.player)
+    );
+
+    const winners = Hand.winners(
+      potSolved.map(s => s.hand)
+    );
+
+    const share = pot.amount / winners.length;
+
+    potSolved.forEach(s => {
+      s.player.handResult = s.hand.descr;
+      if (winners.includes(s.hand)) {
+        s.player.stack += share;
+        s.player.win = true;
+      }
+    });
+  }
+  if (alive.length == 1)
+    alive[0].handResult = "Uncontested";
 }
 
 /* =====================
@@ -368,14 +421,22 @@ function nextHand() {
 function playerNextHand(playerId) {
   all_ok = true;
   game.players.forEach(n => {
+    if (n.stack === 0) n.waiting = true;
     if (!n.isHuman) n.waiting = true;
     if (n.id == playerId) n.waiting = true;
     if (!n.waiting) all_ok = false;
   })
-  if (all_ok) {
-    game.players.forEach(n => { n.waiting = false; })
-    initHand();
-    broadcastState("START");
+  console.log(game.players)
+  console.log(all_ok)
+  if (all_ok && isHost) {
+    if (checkGameOver()) {
+      broadcastState("RESULT");
+    }
+    else {
+      game.players.forEach(n => { n.waiting = false; })
+      initHand();
+      broadcastState("START");
+    }
   }
 }
 
@@ -384,3 +445,18 @@ function pushNextHandButton() {
   nextHand();
 }
 window.pushNextHandButton = pushNextHandButton;
+
+function checkGameOver() {
+  const humans = game.players.filter(p => p.isHuman);
+  const remainPlayers = humans.filter(p => p.stack > 0);
+  if (humans.length == 1)
+    return remainPlayers.length === 0;
+  return remainPlayers.length <= 1;
+}
+
+function showResult() {
+  const player = game.players.filter(p => is_me(p))[0];
+  if (player.win) playSE("victory");
+  else playSE("lose");
+  openResultModal(game.players);
+}

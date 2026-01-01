@@ -133,6 +133,7 @@ function prepareLobby(roomId){
     btn.classList.remove("hidden")
     btn.onclick = () => {
       if (game.players.length >= 2){
+        initStack();
         initHand();
         broadcastState("START");
       }
@@ -152,7 +153,7 @@ function addCPUPlayer() {
     name: `CPU${cpuCount} 🤖`,
     isHuman: false,
     isHost: false,
-    stack: 1000,
+    stack: game.init_stack,
     id: `cpu-${Date.now()}`,
     Lv: 1,
   };

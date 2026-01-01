@@ -15,7 +15,7 @@ function startAsHost() {
     name: myName,
     isHuman: true,
     isHost: true,
-    stack: 1000,
+    stack: game.init_stack,
     id: player_id
   });
   updateLobby(game.players);
@@ -92,7 +92,7 @@ function onReceiveHost(msg) {
     broadcastLobby();
   }
   if (msg.type == "ACT") {
-    act(msg.action, msg.playerId);
+    act(msg.action, msg.playerId, msg.raiseAmount);
   }
   if (msg.type == "NEXT_HAND") {
     playerNextHand(msg.playerId);

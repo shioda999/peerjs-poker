@@ -44,13 +44,7 @@ function renderPlayers() {
     if (isTurn && game.phase !== "showdown") d.classList.add("turn");
     else d.classList.remove("turn");
 
-    if (p.win) {
-      if (!d.classList.contains("winner")) {
-        if(isMe) playSE("win");
-        // else playSE("lose");
-      }
-      d.classList.add("winner");
-    }
+    if (p.win) d.classList.add("winner");
     else d.classList.remove("winner");
 
     // name
@@ -89,10 +83,10 @@ function renderPlayers() {
         hand.appendChild(cd);
       });
 
-      if (p.last_action && game.phase !== "showdown") {
+      if ((p.last_action || p.stack === 0 && p.bet !== 0) && game.phase !== "showdown") {
         const act = document.createElement("div");
         act.className = "last-action";
-        act.textContent = p.last_action.toUpperCase(); // fold → FOLD
+        act.textContent = (p.stack === 0 ? "all-in" : p.last_action).toUpperCase(); // fold → FOLD
         hand.appendChild(act);
       }
     }
@@ -148,12 +142,12 @@ function renderInfo() {
   document.getElementById("pot").textContent = `Pot: ${game.pot}`;
   const phaseElem = document.getElementById("phase");
   if (game.phase != "showdown") {
-    phaseElem.textContent = `Phase: ${game.phase}`;
-    phaseElem.style.color = "white";  // ← 文字色を黄色に変更
+    phaseElem.textContent = "\u00A0"; // `Phase: ${game.phase}`;
+    phaseElem.style.color = "white";
   }
   else {
     phaseElem.textContent = game.result;
-    phaseElem.style.color = "yellow";  // ← 文字色を黄色に変更
+    phaseElem.style.color = "yellow";
   }
   updateControlsVisibility();
 }
@@ -173,7 +167,7 @@ function updateControlsVisibility() {
   const nextBtn = document.getElementById("next-hand");
   if (nextBtn) {
     if (isShowdown && nextBtn.style.display === "none"){
-        nextBtn.textContent = "NextHand"
+        nextBtn.textContent = "Next"
     }
     nextBtn.style.display = isShowdown ? "" : "none";
   }
@@ -333,16 +327,23 @@ function animateDealingHands(callback) {
     if (!is_me(p)) div_index++;
   });
 
-  let finishedCount = 0;
-
   function dealNext(i) {
     if (i >= cardsToDeal.length) return;
     
-    playSE("deal");
-
     const { playerIndex, cardIndex, div_index } = cardsToDeal[i];
     const player = game.players[playerIndex];
     const animCard = cardDiv("??");
+
+    setTimeout(() => dealNext(i + 1), 100);
+
+    if (player.stack === 0 && player.bet === 0) {
+      if (i === cardsToDeal.length - 1 && callback)
+        setTimeout(() => callback(), 800);
+      return;
+    }
+
+    playSE("deal");
+
     animCard.style.position = "fixed"; // absoluteよりfixedが安全な場合が多い
     animCard.style.left = deckX + "px";
     animCard.style.top = deckY + "px";
@@ -371,13 +372,10 @@ function animateDealingHands(callback) {
       // 1枚配り終えるたびに再描画して、本来の場所にあるカードを表示させる
       updateUI();
 
-      finishedCount++;
-      if (finishedCount === cardsToDeal.length && callback) {
+      if (i === cardsToDeal.length - 1 && callback) {
         callback();
       }
     }, 800);
-
-    setTimeout(() => dealNext(i + 1), 100);
   }
 
   setTimeout(() => dealNext(0), 300);
@@ -411,3 +409,106 @@ document.getElementById("next-hand").onclick = (e) => {
 
   window.pushNextHandButton();
 }
+
+const raiseModal   = document.getElementById("raise-modal");
+const raiseSlider  = document.getElementById("raise-slider");
+const raiseDisplay = document.getElementById("raise-amount-display");
+
+function openRaiseModal({ min, max, value = min }) {
+  raiseSlider.min = min;
+  raiseSlider.max = max;
+  raiseSlider.value = value;
+  updateRaiseDisplay();
+  raiseModal.classList.remove("hidden");
+}
+
+function closeRaiseModal() {
+  raiseModal.classList.add("hidden");
+}
+
+function updateRaiseDisplay() {
+  raiseDisplay.textContent = "+" + raiseSlider.value;
+}
+
+raiseSlider.addEventListener("input", updateRaiseDisplay);
+
+document.querySelectorAll(".raise-step").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const delta = Number(btn.dataset.delta);
+    raiseSlider.value = Math.min(
+      raiseSlider.max,
+      Math.max(raiseSlider.min, Number(raiseSlider.value) + delta)
+    );
+    updateRaiseDisplay();
+  });
+});
+
+document.getElementById("raise-close")
+  .addEventListener("click", closeRaiseModal);
+
+document.getElementById("raise-confirm")
+  .addEventListener("click", () => {
+    const amount = Number(raiseSlider.value);
+    closeRaiseModal();
+    doAct("raise", amount); // ← 既存のRaise処理に接続
+  });
+
+document.querySelectorAll(".raise-presets button").forEach(btn => {
+  btn.addEventListener("click", () => {
+
+    let target;
+    const player = game.players.filter(p => is_me(p))[0];
+
+    // ½ Pot / Pot
+    if (btn.dataset.add) {
+      target = Number(raiseSlider.value) + Number(btn.dataset.add);
+    }
+
+    // All-in
+    if (btn.dataset.allin) {
+      target = player.stack;
+    }
+
+    // slider の範囲に丸める
+    target = Math.min(
+      Number(raiseSlider.max),
+      Math.max(Number(raiseSlider.min), target)
+    );
+
+    raiseSlider.value = target;
+    updateRaiseDisplay();
+  });
+});
+
+function openResultModal(results) {
+  const modal = document.getElementById("result-modal");
+  const body  = document.getElementById("result-body");
+
+  // 中身をクリア
+  body.innerHTML = "";
+
+  // results: [{ name, diff, isWinner }]
+  results.forEach(r => {
+    const row = document.createElement("div");
+    row.className = "result-row";
+    if (r.win) row.classList.add("winner");
+
+    row.innerHTML = `
+      <span class="result-name">${r.name}</span>
+      <span class="result-stack">${r.stack}</span>
+    `;
+
+    body.appendChild(row);
+  });
+
+  modal.classList.remove("hidden");
+}
+
+function closeResultModal(show_lobby=true) {
+  const modal = document.getElementById("result-modal");
+  modal.classList.add("hidden");
+  if (show_lobby) showLobby();
+}
+
+document.getElementById("result-ok")
+  .addEventListener("click", closeResultModal);

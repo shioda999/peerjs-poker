@@ -69,6 +69,64 @@
   </div>
 
 </div>
+<div id="raise-modal" class="modal hidden">
+  <div class="modal-content raise-modal-content">
+    <button class="modal-close" id="raise-close">×</button>
+    <h3>Raise Amount</h3>
+
+    <div class="raise-ui">
+      <button class="raise-step" data-delta="-1">−</button>
+
+      <input
+        type="range"
+        id="raise-slider"
+        min="1"
+        max="100"
+        step="1"
+        value="1"
+      >
+
+      <button class="raise-step" data-delta="1">＋</button>
+    </div>
+
+    <div id="raise-amount-display">+1</div>
+
+    <div class="raise-presets">
+      <button data-add="20">+20</button>
+      <button data-add="100">+100</button>
+      <button data-allin="true">All-in</button>
+    </div>
+
+    <div class="modal-actions">
+      <button id="raise-confirm">Raise</button>
+    </div>
+  </div>
+</div>
+
+<div id="result-modal" class="modal hidden">
+  <div class="modal-content result-modal-content">
+    <h3 id="result-title">ゲーム結果</h3>
+
+    <div id="result-body">
+      <!-- ここに結果を動的に入れる想定 -->
+      <div class="result-row winner">
+        <span class="result-name">Player1</span>
+        <span class="result-stack">+1200</span>
+      </div>
+      <div class="result-row">
+        <span class="result-name">Player2</span>
+        <span class="result-stack">-600</span>
+      </div>
+      <div class="result-row">
+        <span class="result-name">Player3</span>
+        <span class="result-stack">-600</span>
+      </div>
+    </div>
+
+    <button id="result-ok">OK</button>
+  </div>
+</div>
+
 </div>
 
 <script src="js/net.js"></script>
