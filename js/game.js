@@ -55,6 +55,10 @@ function dealGameProc(event) { // client
     case "NEXT_PHASE":
       nextPhase();
       break;
+    case "PLAY_SE_RAISE":
+      playSE("up");
+      // console.log("playse up");
+      break;
     case "SINGLE":
       showdown();
       break;
@@ -230,7 +234,7 @@ function raise(p, amt) {
   });
 
   p.last_action = "raise";
-  playSE("up");
+  broadcastState("PLAY_SE_RAISE");
 }
 
 /* =====================

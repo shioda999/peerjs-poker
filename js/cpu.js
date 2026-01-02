@@ -69,6 +69,7 @@ function cpuMoveLv0(p) {
 function cpuMoveSmart(p, lv=1) {
   const trials = game.phase == "river" ? 3000 : 800;
   const winRate = estimateWinRate(p.hand, game.board, trials);
+  // console.log(winRate)
 
   if (!potOddsOk(p, winRate)) return "fold"
 
@@ -77,6 +78,7 @@ function cpuMoveSmart(p, lv=1) {
     { act: "call", v: evCall(p, winRate) },
     { act: "raise", v: evRaise(p, winRate, game.raiseAmount) }
   ];
+  // console.log(evs)
 
   return pickAction(evs);
 }
