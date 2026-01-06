@@ -179,7 +179,7 @@ function fisher_yates_shuffle(array) {
 function estimateWinRate(myHand, board, trials = 1000) {
   let wins = 0;
   let ties = 0;
-  let remaining_deck = getRemainingDeck(myHand, game.board);
+  let remaining_deck = getRemainingDeck(myHand, game.board, game.phase);
 
   for (let i = 0; i < trials; i++) {
     const deck = fisher_yates_shuffle([...remaining_deck]);
@@ -216,10 +216,18 @@ function potOddsOk(p, winRate) {
   return winRate > cost / (game.pot + cost);
 }
 
-function getRemainingDeck(myHand, board) {
-  const used = [
-    ...myHand,
-    ...board
-  ];
+function getRemainingDeck(myHand, board, phase) {
+  const used = [...myHand];
+
+  if (phase === "flop") {
+    used.push(...board.slice(0, 3));
+  }
+  if (phase === "turn") {
+    used.push(...board.slice(0, 4));
+  }
+  if (phase === "river") {
+    used.push(...board.slice(0, 5));
+  }
+
   return makeDeck().filter(c => !used.includes(c));
 }
