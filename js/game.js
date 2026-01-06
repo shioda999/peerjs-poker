@@ -449,10 +449,11 @@ function pushNextHandButton() {
 window.pushNextHandButton = pushNextHandButton;
 
 function checkGameOver() {
+  const remain = game.players.filter(p => p.stack > 0);
   const humans = game.players.filter(p => p.isHuman);
   const remainPlayers = humans.filter(p => p.stack > 0);
   if (humans.length == 1)
-    return remainPlayers.length === 0;
+    return remainPlayers.length === 0 || remain.length === 1;
   return remainPlayers.length <= 1;
 }
 
