@@ -66,9 +66,18 @@ function cpuMoveLv0(p) {
   }
 }
 
+function getBoard(board, phase) {
+  let v = 0;
+  if (phase === "flop") v = 3;
+  if (phase === "turn") v = 4;
+  if (phase === "river") v = 5;
+  return board.slice(0, v);
+}
+
 function cpuMoveSmart(p, lv=1) {
   const trials = game.phase == "river" ? 3000 : 800;
-  const winRate = estimateWinRate(p.hand, game.board, trials);
+  const board = getBoard(game.board, game.phase);
+  const winRate = estimateWinRate(p.hand, board, trials);
   // console.log(winRate)
 
   if (!potOddsOk(p, winRate)) return "fold"
@@ -179,7 +188,8 @@ function fisher_yates_shuffle(array) {
 function estimateWinRate(myHand, board, trials = 1000) {
   let wins = 0;
   let ties = 0;
-  let remaining_deck = getRemainingDeck(myHand, game.board, game.phase);
+  let remaining_deck = getRemainingDeck(myHand, board, game.phase);
+  // console.log(remaining_deck)
 
   for (let i = 0; i < trials; i++) {
     const deck = fisher_yates_shuffle([...remaining_deck]);
@@ -216,18 +226,7 @@ function potOddsOk(p, winRate) {
   return winRate > cost / (game.pot + cost);
 }
 
-function getRemainingDeck(myHand, board, phase) {
-  const used = [...myHand];
-
-  if (phase === "flop") {
-    used.push(...board.slice(0, 3));
-  }
-  if (phase === "turn") {
-    used.push(...board.slice(0, 4));
-  }
-  if (phase === "river") {
-    used.push(...board.slice(0, 5));
-  }
-
+function getRemainingDeck(myHand, board) {
+  const used = [...myHand, ...board];
   return makeDeck().filter(c => !used.includes(c));
 }

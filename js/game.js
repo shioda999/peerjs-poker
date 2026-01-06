@@ -430,8 +430,6 @@ function playerNextHand(playerId) {
     if (n.id == playerId) n.waiting = true;
     if (!n.waiting) all_ok = false;
   })
-  console.log(game.players)
-  console.log(all_ok)
   if (all_ok && isHost) {
     if (checkGameOver()) {
       broadcastState("RESULT");
