@@ -345,46 +345,65 @@ function showdown() {
 }
 
 function settleHand() {
+  // 勝負に参加している人（フォールドしていない）
   const alive = game.players.filter(p => !p.folded);
 
+  // Hand.solve は alive のみ
   const solved = alive.map(p => ({
     player: p,
     hand: Hand.solve(p.hand.concat(game.board))
   }));
 
-  game.players.forEach(p => p.handResult = null);
-
-  // 勝利フラグ初期化
-  alive.forEach(p => {
+  // 初期化
+  game.players.forEach(p => {
     p.win = false;
-    p.handResult = "";
+    p.handResult = null;
   });
 
-  // bet昇順（bet > 0 のみ）
-  const sorted = [...alive]
+  // ==============================
+  // ここが重要：bet を出した全員
+  // ==============================
+  const bettors = game.players
     .filter(p => p.bet > 0)
     .sort((a, b) => a.bet - b.bet);
 
-  let remaining = [...sorted];
+  let remaining = [...bettors];
   let prevBet = 0;
   const pots = [];
 
-  // ポット構築
-  for (const p of sorted) {
+  // ===== サイドポット構築 =====
+  for (const p of bettors) {
     const diff = p.bet - prevBet;
     if (diff <= 0) continue;
 
+    const amount = diff * remaining.length;
+
+    // この pot を獲得できるのは「まだ remaining にいて、かつ fold していない人」
+    const eligible = remaining.filter(r => !r.folded);
+
     pots.push({
-      amount: diff * remaining.length,
-      players: [...remaining]
+      amount,
+      players: eligible
     });
 
     prevBet = p.bet;
     remaining = remaining.filter(r => r !== p);
   }
 
-  // ポットごとに分配
+  // ===== フォールドのみで決着した場合 =====
+  if (alive.length === 1) {
+    const winner = alive[0];
+    const totalPot = pots.reduce((sum, p) => sum + p.amount, 0);
+    winner.stack += totalPot;
+    winner.win = true;
+    winner.handResult = "Uncontested";
+    return;
+  }
+
+  // ===== pot ごとに勝敗判定・分配 =====
   for (const pot of pots) {
+    if (pot.players.length === 0) continue;
+
     const potSolved = solved.filter(s =>
       pot.players.includes(s.player)
     );
@@ -403,8 +422,6 @@ function settleHand() {
       }
     });
   }
-  if (alive.length == 1)
-    alive[0].handResult = "Uncontested";
 }
 
 /* =====================
